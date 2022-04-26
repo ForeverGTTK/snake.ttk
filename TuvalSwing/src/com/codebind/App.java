@@ -9,7 +9,7 @@ public class App {
      JPanel panelMain;
 
     public static void main(String[] args) {
-    new GameFrame();
-//        BaseFrame baseFrame= new BaseFrame();
+   // new GameFrame();
+  BaseFrame baseFrame= new BaseFrame();
     }}
 

@@ -1,52 +1,44 @@
 package com.codebind;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 
-public class BaseFrame extends JFrame implements KeyListener {
+import static com.codebind.GamePanel.*;
+
+public class BaseFrame extends JFrame {
 
     JFrame frame;
-    int score;
-    JPanel rightPanel;
+    public   JPanel rightPanel;
     public   JPanel mainPanel;
-    JLabel snake;
+
+    public static int score;
+    public static int GameScore =0;
+    public static JPanel scorePanel;
+
+    public static JButton resetButton;
+    public static JButton pauseButton;
+    public static JSlider speedSlider;
+
 
     BaseFrame () {
         ImageIcon image = new ImageIcon("G_Logo.png");
         this.setIconImage(image.getImage());
-
         baseBuild();
         rightPanelBuild();
+        mainPanel.add(new GamePanel());
+        mainPanel.grabFocus();
         frame.setVisible(true);
-        int LastScore = Game();
-
-
 
     }
-
-    int Game (){
-        score=0;
-        snakeMaker();
-        return score;
+    public void pauseMessage (){
+        JOptionPane.showMessageDialog(null,"You paused !\n\t press again to continue?","Snake.TTK",JOptionPane.INFORMATION_MESSAGE);
     }
-
-    void deathMessage (){
-        JOptionPane.showMessageDialog(null,"You Lost !\n\t Would you like to Play Again?","Snake.TTK",JOptionPane.OK_OPTION);
-
-    }
-
     void baseBuild () {
 
         frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout(10,0));
-        frame.setSize(500,500);
+        frame.setSize(SCREEN_WIDTH+200, SCREEN_HIGHET+200);
 
         // ------------------- panels -----------------------
         JPanel leftPanel= new JPanel();
@@ -59,11 +51,11 @@ public class BaseFrame extends JFrame implements KeyListener {
         topPanel.setBackground(Color.LIGHT_GRAY);
         bottomPanel.setBackground(Color.black);
         mainPanel.setBackground(Color.green);
-        leftPanel.setPreferredSize(new Dimension(100,100));
-        rightPanel.setPreferredSize(new Dimension(100,100));
-        topPanel.setPreferredSize(new Dimension(100,50));
-        bottomPanel.setPreferredSize(new Dimension(100,50));
-        mainPanel.setPreferredSize(new Dimension(300,300));
+        leftPanel.setPreferredSize(new Dimension(100,400));
+        rightPanel.setPreferredSize(new Dimension(100,400));
+        topPanel.setPreferredSize(new Dimension(400,50));
+        bottomPanel.setPreferredSize(new Dimension(400,50));
+        mainPanel.setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HIGHET));
         frame.add(leftPanel,BorderLayout.WEST);
         frame.add(rightPanel,BorderLayout.EAST);
         frame.add(topPanel,BorderLayout.NORTH);
@@ -72,79 +64,52 @@ public class BaseFrame extends JFrame implements KeyListener {
     }
 
     void rightPanelBuild (){
+         scorePanel = new JPanel();
+//        scoreLabel.addVetoableChangeListener();   )..addComponentListener(e -> score!=Integer.getInteger(scoreLabel.getText())? scoreLabel.setText(String.valueOf(score)) :);
         rightPanel.setFocusable(false);
-        JButton resetButton= new JButton("Reset");
-        JButton pauseButton= new JButton("Pause");
-        JSlider speedSlider = new JSlider(0,10,5);
+        resetButton= new JButton("Reset");
+        pauseButton= new JButton("Pause");
+        speedSlider = new JSlider(1,25,5);
+
         speedSlider.setPreferredSize(new Dimension(100,50));
         speedSlider.setPaintTicks(true);
         speedSlider.setMinorTickSpacing(2);
         speedSlider.setMajorTickSpacing(3);
         speedSlider.setPaintLabels(true);
+
         pauseButton.setFocusable(false);
         resetButton.setFocusable(false);
         speedSlider.setFocusable(false);
-        resetButton.addActionListener(e -> Game());
-        pauseButton.addActionListener (e -> {
+
+        scorePanel.setBackground(Color.darkGray);
+        scorePanel.setSize(100,70);
+
+
+        pauseButton.addActionListener
+        (e -> {
             if (pauseButton.getText() == "Continue") {
                 pauseButton.setText("Pause");
-                mainPanel.addKeyListener(this);
+                GamePanel.running = true;
             } else {
                 pauseButton.setText("Continue");
-                mainPanel.removeKeyListener(this);
+                GamePanel.running = false;
+                pauseMessage();
             }
-                                        });
-        speedSlider.addChangeListener(e -> System.out.println(speedSlider.getValue()));
-        rightPanel.add(new JLabel("Your Score"));
+        });
+
         rightPanel.add(resetButton);
         rightPanel.add(pauseButton);
         rightPanel.add(new JLabel("Game speed"));
         rightPanel.add(speedSlider);
+        rightPanel.add(new JLabel("Your Score\n"));
+        rightPanel.add(scorePanel,BorderLayout.AFTER_LAST_LINE);
 
-    }
 
-   JLabel snakeMaker(){
-        try{
-            System.out.println("Restarted");}
-        catch (NullPointerException ex){
-            System.out.println("first attempt");
-        }
-        mainPanel.setLayout(null);
-        mainPanel.grabFocus();
-        snake = new JLabel();
-        snake.setBounds(150,50,30,30);
-        snake.setBackground(Color.BLACK);
-        snake.setOpaque(true);
-       mainPanel.addKeyListener(this );
-       mainPanel.add(snake);
-       return snake;
     }
 
 
 
-    @Override
-    public void keyTyped(KeyEvent e) {
-
-    }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-        switch(e.getKeyCode()){
-            case 37: snake.setLocation(snake.getX()-5,snake.getY());
-                break;
-            case 38: snake.setLocation(snake.getX(),snake.getY()-5);
-                break;
-            case 39: snake.setLocation(snake.getX()+5,snake.getY());
-                break;
-            case 40: snake.setLocation(snake.getX(),snake.getY()+5);
-                break;
-        }
-
-    }
 
 
-    @Override
-    public void keyReleased(KeyEvent keyEvent) {
-    }
 }
 

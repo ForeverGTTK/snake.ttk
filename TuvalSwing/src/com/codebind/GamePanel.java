@@ -1,11 +1,14 @@
 package com.codebind;
 
+import org.w3c.dom.css.Rect;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.lang.reflect.Array;
 import java.util.Random;
 
 public class GamePanel extends JPanel implements ActionListener {
@@ -16,29 +19,26 @@ public class GamePanel extends JPanel implements ActionListener {
     static final int UNIT_SIZE= 25;
     static final int GAME_UNITS = (SCREEN_WIDTH*SCREEN_HIGHET)/(UNIT_SIZE*UNIT_SIZE);
 
-    static final int BaseDelay= 175;
+    static final int BaseDelay= 1000;
+    public static int GameDelay=BaseDelay;
 
     static final int[] x = new int[SCREEN_WIDTH*SCREEN_HIGHET];
     static final int[] y = new int[SCREEN_WIDTH*SCREEN_HIGHET];
 
-    int bodySize = 3;
+    public static final int defaultBodySize= 3;
+    int bodySize = defaultBodySize;
 
-    int appleEaten;
+    public static int appleEaten;
     int appleX;
     int appleY;
 
-    int highestScore;
+    int highestScore=0;
 
     char direction= 'R';
-    boolean running = false;
+   public static boolean running = false;
 
     Timer timer;
     Random random;
-
-    ImageIcon snakeHead;
-    ImageIcon snakeBody;
-    ImageIcon snakeBut;
-    ImageIcon beer;
 
     GamePanel(){
         random = new Random();
@@ -46,20 +46,36 @@ public class GamePanel extends JPanel implements ActionListener {
         this.setBackground(Color.black);
         this.setFocusable(true);
         this.addKeyListener(new MyKeyAdapter());
-
+        BaseFrame.resetButton.addActionListener(e -> resetGame());
+        BaseFrame.speedSlider.addChangeListener(e -> GamePanel.GameDelayupdate());     //todo
         startGame();
     }
 
     public void startGame(){
         newApple();
-        snakeHead= new ImageIcon("leonaidusFace.png");
-        snakeBody= new ImageIcon("chain_PNG0.png");
-        snakeBut = new ImageIcon("bottom-512.png");
-        beer = new ImageIcon("beer.png");
         running = true;
-        timer = new Timer(BaseDelay,this);
+        timer = new Timer(GameDelay,this);
         timer.start();
 
+    }
+
+    public void deathMessage (){
+        JOptionPane.showMessageDialog(null,"You Lost !\n\t Would you like to Play Again?","Snake.TTK",JOptionPane.OK_OPTION);
+       resetGame();
+    }
+
+    void resetGame (){
+            timer.stop();
+            for (int i=0;i<=bodySize;i++){
+                x[i]=0;
+                y[i]=0;
+            }
+            if (BaseFrame.score> highestScore)
+                highestScore=BaseFrame.score;
+            appleEaten=0;
+            direction='R';
+            bodySize=defaultBodySize;
+            startGame();
     }
     public void paintComponent (Graphics g) {
         super.paintComponent(g);
@@ -67,37 +83,31 @@ public class GamePanel extends JPanel implements ActionListener {
     }
     public void draw (Graphics g ){
         if (running){
-            for (int i=0;i<SCREEN_HIGHET/UNIT_SIZE;i++){
+            for (int i=0;i<SCREEN_HIGHET/UNIT_SIZE;i++){// draw horizontal lines
                   g.drawLine(i*UNIT_SIZE,0,i*UNIT_SIZE,SCREEN_HIGHET);
             }
-            for (int i=0; i<SCREEN_WIDTH/UNIT_SIZE;i++){
+            for (int i=0; i<SCREEN_WIDTH/UNIT_SIZE;i++){ //draw vertical lines
                  g.drawLine(0,i*UNIT_SIZE,SCREEN_WIDTH,i*UNIT_SIZE);
             }
-                g.setColor(Color.red);
+                g.setColor(Color.red);                  // draw apple
                 g.drawOval(appleX,appleY,UNIT_SIZE,UNIT_SIZE);
-
-                for (int i=0; i<bodySize;i++){
-
-                        g.setColor(Color.green);
-                        g.drawRect(x[i],y[i],UNIT_SIZE,UNIT_SIZE);
-                }
-//            g.drawImage(beer.getImage(),appleX,appleY,UNIT_SIZE,UNIT_SIZE,this);
-
-//            for (int i=0;i<bodySize;i++){
-//                if(i==0){
-//                    g.drawImage(snakeHead.getImage(),x[i],y[i],this);
-//                }else if(i==bodySize-1){
-//                    g.drawImage(snakeBut.getImage(),x[i],y[i],this);
-//                }
-//                else{ g.drawImage(snakeBody.getImage(),x[i],y[i],this);}
-//            }
+            for (int i=0; i<bodySize;i++){  //draw snake body
+                g.setColor(Color.green);
+                g.drawRect(x[i],y[i],UNIT_SIZE,UNIT_SIZE);
+            }
+            g.setColor(Color.white);
+            g.drawString(String.valueOf(BaseFrame.GameScore),BaseFrame.scorePanel.getBounds().width,BaseFrame.scorePanel.getBounds().height);
         }
 
     }
 
-    public void newApple (){
-        appleX= (random.nextInt(SCREEN_WIDTH/UNIT_SIZE))*UNIT_SIZE;
-        appleY= (random.nextInt(SCREEN_HIGHET/UNIT_SIZE))*UNIT_SIZE;
+    public void newApple () {
+        appleX = (random.nextInt(SCREEN_WIDTH / UNIT_SIZE)) * UNIT_SIZE;
+        appleY = (random.nextInt(SCREEN_HIGHET / UNIT_SIZE)) * UNIT_SIZE;
+        for (int i=0;i<bodySize;i++){
+        if (appleX == x[i] || appleY == y[i])
+            newApple();
+    }
     }
 
     public void move() {
@@ -123,8 +133,9 @@ public class GamePanel extends JPanel implements ActionListener {
 
     public void appleCheck (){
         if ( x[0] == appleX && y[0] == appleY){
-            bodySize++;
+            bodySize+=2;
             appleEaten++;
+            BaseFrame.GameScore = bodySize+appleEaten;
             newApple();
         }
     }
@@ -135,9 +146,23 @@ public class GamePanel extends JPanel implements ActionListener {
                 running=false;
             }
         }
+        if (!running){
+            timer.stop();
+            deathMessage();
+        }
+        if (x[0]<this.getMinimumSize().width-UNIT_SIZE&&direction=='L'){
+            x[0]=SCREEN_WIDTH;}
+        if (x[0]>(SCREEN_WIDTH)&&direction=='R'){
+            x[0]=0;}
+        if (y[0]<this.getMinimumSize().height-UNIT_SIZE&&direction=='U'){
+            y[0]=SCREEN_HIGHET;}
+        if (y[0]>(SCREEN_HIGHET)&&direction=='D'){
+            y[0]=0;}
     }
 
-
+    public static void GameDelayupdate(){
+        GameDelay = BaseDelay/BaseFrame.speedSlider.getValue();
+    }
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
 
@@ -145,6 +170,13 @@ public class GamePanel extends JPanel implements ActionListener {
             move();
             appleCheck();
             checkCollition();
+            int tempDelay=BaseDelay;
+            GameDelayupdate();
+            if (GameDelay!=tempDelay){
+            timer.setDelay(GameDelay);
+            timer.start();
+            }
+
         }
         repaint();
     }
@@ -177,6 +209,8 @@ public class GamePanel extends JPanel implements ActionListener {
                     running= !running;
                     break;
             }
+
+
         }
     }
 
