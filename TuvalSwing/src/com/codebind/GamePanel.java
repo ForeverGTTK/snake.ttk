@@ -8,6 +8,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.image.ImageObserver;
+import java.awt.image.ImageProducer;
 import java.lang.reflect.Array;
 import java.util.Random;
 
@@ -16,7 +18,7 @@ public class GamePanel extends JPanel implements ActionListener {
     static final int SCREEN_WIDTH= 600;
     static final int SCREEN_HIGHET= 600;
 
-    static final int UNIT_SIZE= 25;
+    static final int UNIT_SIZE= 20;
     static final int GAME_UNITS = (SCREEN_WIDTH*SCREEN_HIGHET)/(UNIT_SIZE*UNIT_SIZE);
 
     static final int BaseDelay= 1000;
@@ -25,7 +27,7 @@ public class GamePanel extends JPanel implements ActionListener {
     static final int[] x = new int[SCREEN_WIDTH*SCREEN_HIGHET];
     static final int[] y = new int[SCREEN_WIDTH*SCREEN_HIGHET];
 
-    public static final int defaultBodySize= 3;
+    public static final int defaultBodySize= 50;
     int bodySize = defaultBodySize;
 
     public static int appleEaten;
@@ -39,6 +41,8 @@ public class GamePanel extends JPanel implements ActionListener {
 
     Timer timer;
     Random random;
+
+    Image wormHead;
 
     GamePanel(){
         random = new Random();
@@ -70,8 +74,8 @@ public class GamePanel extends JPanel implements ActionListener {
                 x[i]=0;
                 y[i]=0;
             }
-            if (BaseFrame.score> highestScore)
-                highestScore=BaseFrame.score;
+            BaseFrame.Hscore.scoreCheck();
+
             appleEaten=0;
             direction='R';
             bodySize=defaultBodySize;
@@ -83,6 +87,8 @@ public class GamePanel extends JPanel implements ActionListener {
     }
     public void draw (Graphics g ){
         if (running){
+            g.setColor(Color.black);
+
             for (int i=0;i<SCREEN_HIGHET/UNIT_SIZE;i++){// draw horizontal lines
                   g.drawLine(i*UNIT_SIZE,0,i*UNIT_SIZE,SCREEN_HIGHET);
             }
@@ -91,12 +97,30 @@ public class GamePanel extends JPanel implements ActionListener {
             }
                 g.setColor(Color.red);                  // draw apple
                 g.drawOval(appleX,appleY,UNIT_SIZE,UNIT_SIZE);
+                g.fillOval(appleX,appleY,UNIT_SIZE,UNIT_SIZE);
             for (int i=0; i<bodySize;i++){  //draw snake body
-                g.setColor(Color.green);
-                g.drawRect(x[i],y[i],UNIT_SIZE,UNIT_SIZE);
+                if (i==0){
+                    g.drawImage(wormHead,x[0],y[0],UNIT_SIZE,UNIT_SIZE, this);
+                }
+                g.setColor(Color.blue);
+                g.fillRoundRect(x[i],y[i],UNIT_SIZE,UNIT_SIZE,i,i);
             }
             g.setColor(Color.white);
-            g.drawString(String.valueOf(BaseFrame.GameScore),BaseFrame.scorePanel.getBounds().width,BaseFrame.scorePanel.getBounds().height);
+            g.setFont(new Font("Ink Free",Font.BOLD,40));
+            FontMetrics metrics = getFontMetrics(g.getFont());
+            g.drawString(String.valueOf(BaseFrame.GameScore),SCREEN_WIDTH/2,SCREEN_HIGHET);
+        }else {
+            g.setColor(Color.red);
+            g.setFont(new Font("Ink Free",Font.BOLD,40));
+            FontMetrics metrics = getFontMetrics(g.getFont());
+            g.drawString("Score:  "+ BaseFrame.GameScore,(SCREEN_WIDTH-metrics.stringWidth("Score:  "+ BaseFrame.GameScore))/2,g.getFont().getSize());
+            g.drawString("Apples Eaten:  "+ appleEaten,(SCREEN_WIDTH-metrics.stringWidth("apples eaten:  " + appleEaten))/2,g.getFont().getSize()*2);
+
+            g.setColor(Color.WHITE);
+            g.drawString("Highe Score list",(SCREEN_WIDTH-metrics.stringWidth("Highe Score list: "))/2,g.getFont().getSize()*3);
+            for (int i = 1; i<= BaseFrame.Hscore.getListLength(); i++){
+                g.drawString(i+".\t  "+ BaseFrame.Hscore.getName(i-1) +BaseFrame.Hscore.getScore(i-1),(SCREEN_WIDTH-metrics.stringWidth("Score:  "+ BaseFrame.GameScore))/2,g.getFont().getSize()*(3+i));
+            }
         }
 
     }
@@ -105,9 +129,13 @@ public class GamePanel extends JPanel implements ActionListener {
         appleX = (random.nextInt(SCREEN_WIDTH / UNIT_SIZE)) * UNIT_SIZE;
         appleY = (random.nextInt(SCREEN_HIGHET / UNIT_SIZE)) * UNIT_SIZE;
         for (int i=0;i<bodySize;i++){
-        if (appleX == x[i] || appleY == y[i])
-            newApple();
-    }
+        if (appleX == x[i])
+            appleX = (random.nextInt(SCREEN_WIDTH / UNIT_SIZE)) * UNIT_SIZE;
+        if (appleY == y[i]) {
+            appleY = (random.nextInt(SCREEN_HIGHET / UNIT_SIZE)) * UNIT_SIZE;
+        }
+        }
+        return;
     }
 
     public void move() {
@@ -135,7 +163,7 @@ public class GamePanel extends JPanel implements ActionListener {
         if ( x[0] == appleX && y[0] == appleY){
             bodySize+=2;
             appleEaten++;
-            BaseFrame.GameScore = bodySize+appleEaten;
+            BaseFrame.GameScore = (bodySize+appleEaten)*BaseFrame.speedSlider.getValue();
             newApple();
         }
     }
